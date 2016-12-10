@@ -13,40 +13,31 @@
  * the License.
  */
 /*
- * PrintClient.java
+ * PrintTask.java
  *
- * Created on 2016-12-06, 10:21
+ * Created on 2016-12-10, 19:55
  */
 package com.marcnuri.printclient;
 
-import java.util.Timer;
-
 /**
- *
- * Created by Marc Nuri <marc@marcnuri.com> on 2016-12-06.
+ * Created by Marc Nuri <marc@marcnuri.com> on 2016-12-10.
  */
-public class PrintClient {
+public class PrintTask {
 
 //**************************************************************************************************
 //  Fields
 //**************************************************************************************************
-	private static final long DEFAULT_POLL_TIME = 1000L;
-	private static final int HTTP_STATUS_CODE_UNAUTHORIZED = 401;
-	private final Timer timer;
-	private boolean started;
-	private String printServerUrl;
-	private String cookie;
-	private boolean sslTrustAll;
-	private long pollTime = DEFAULT_POLL_TIME;
-
+	private final String url;
+	private final String printerName;
+	private final int copies;
 
 //**************************************************************************************************
 //  Constructors
 //**************************************************************************************************
-	public PrintClient(String printServerUrl) {
-		this.started = false;
-		this.printServerUrl = printServerUrl;
-		this.timer = new Timer();
+	public PrintTask(String url, String printerName, int copies) {
+		this.url = url;
+		this.printerName = printerName;
+		this.copies = copies;
 	}
 
 //**************************************************************************************************
@@ -60,69 +51,25 @@ public class PrintClient {
 //**************************************************************************************************
 //  Other Methods
 //**************************************************************************************************
-	private void start(){
-		if(!started) {
-			timer.schedule(new ServerPollThread(this), 0L, getPollTime());
-			started=true;
-		}
-	}
-
 
 //**************************************************************************************************
 //  Getter/Setter Methods
 //**************************************************************************************************
-	public String getPrintServerUrl() {
-		return printServerUrl;
+	public String getUrl() {
+		return url;
 	}
 
-	public String getCookie() {
-		return cookie;
+	public String getPrinterName() {
+		return printerName;
 	}
 
-	public void setCookie(String cookie) {
-		this.cookie = cookie;
-	}
-
-	public long getPollTime() {
-		return pollTime;
-	}
-
-	public void setPollTime(long pollTime) {
-		this.pollTime = pollTime;
-	}
-
-	public boolean getSslTrustAll() {
-		return sslTrustAll;
-	}
-
-	public void setSslTrustAll(boolean sslTrustAll) {
-		this.sslTrustAll = sslTrustAll;
+	public int getCopies() {
+		return copies;
 	}
 
 //**************************************************************************************************
 //  Static Methods
 //**************************************************************************************************
-	public static void main(String[] args) {
-		String printServerUrl = null;//-url
-		String cookie = null;//-jsessionid
-		boolean sslTrustAll = false;//-sslTrust
-		for (int a = 0; a < args.length; a++) {
-			if (args[a].equals("-url") && a + 1 < args.length) {
-				printServerUrl = args[a+1];
-			}
-			if (args[a].equals("-cookie") && a + 1 < args.length) {
-				cookie = args[a+1];
-			}
-			if (args[a].equals("-sslTrust")) {
-				sslTrustAll = true;
-			}
-		}
-		final PrintClient pc = new PrintClient(printServerUrl);
-		pc.setCookie(cookie);
-		pc.setSslTrustAll(sslTrustAll);
-		pc.start();
-	}
-
 
 //**************************************************************************************************
 //  Inner Classes

@@ -13,40 +13,43 @@
  * the License.
  */
 /*
- * PrintClient.java
+ * ServerPollThread.java
  *
- * Created on 2016-12-06, 10:21
+ * Created on 2016-12-10, 19:29
  */
 package com.marcnuri.printclient;
 
-import java.util.Timer;
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonValue;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.security.GeneralSecurityException;
+import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- *
- * Created by Marc Nuri <marc@marcnuri.com> on 2016-12-06.
+ * Created by Marc Nuri <marc@marcnuri.com> on 2016-12-10.
  */
-public class PrintClient {
+public class ServerPollThread extends TimerTask{
 
 //**************************************************************************************************
 //  Fields
 //**************************************************************************************************
-	private static final long DEFAULT_POLL_TIME = 1000L;
-	private static final int HTTP_STATUS_CODE_UNAUTHORIZED = 401;
-	private final Timer timer;
-	private boolean started;
-	private String printServerUrl;
-	private String cookie;
-	private boolean sslTrustAll;
-	private long pollTime = DEFAULT_POLL_TIME;
-
+	private final PrintClient printClient;
+	private AtomicBoolean polling;
 
 //**************************************************************************************************
 //  Constructors
 //**************************************************************************************************
-	public PrintClient(String printServerUrl) {
-		this.started = false;
-		this.printServerUrl = printServerUrl;
-		this.timer = new Timer();
+	public ServerPollThread(PrintClient printClient) {
+		this.printClient = printClient;
+		polling = new AtomicBoolean(false);
 	}
 
 //**************************************************************************************************
@@ -56,73 +59,60 @@ public class PrintClient {
 //**************************************************************************************************
 //  Overridden Methods
 //**************************************************************************************************
+	@Override
+	public void run() {
+		//If task is scheduled using a repeating period this is unnecessary
+		if(!polling.get()){
+			polling.set(true);
+			try {
+				pollServer();
+			} catch (IOException e) {
+				Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "", e);
+			}
+			polling.set(false);
+		}
+	}
 
 //**************************************************************************************************
 //  Other Methods
 //**************************************************************************************************
-	private void start(){
-		if(!started) {
-			timer.schedule(new ServerPollThread(this), 0L, getPollTime());
-			started=true;
+	private void pollServer() throws IOException {
+		//Don't check ssl security, validate any certificate. Useful for self-signed certificates
+		//or certificates from non-authorities.
+		if(printClient.getSslTrustAll()) {
+			try {
+				SSLHelper.disableSSLCertificateChecking();
+			} catch (GeneralSecurityException e) {
+				Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "", e);
+			}
 		}
-	}
+		final URL url = new URL(printClient.getPrintServerUrl());
+		final HttpURLConnection request = (HttpURLConnection)url.openConnection();
+		//Place JSESSIONID in request header to emulate a user session
+		if(printClient.getCookie() != null && !printClient.getCookie().isEmpty()) {
+			request.setRequestProperty("Cookie", printClient.getCookie());
+		}
+		request.connect();
+		final JsonValue jsv = Json.parse(new InputStreamReader((InputStream) request.getContent()));
+		if(jsv.isArray()){
 
+		}
+
+	//		Json
+	//		final int response = request.getResponseCode();
+	//		final JsonParser jp = new JsonParser(); //from gson
+	//		final JsonElement root = jp.parse(new InputStreamReader((InputStream) request.getContent())); //Convert the input stream to a json element
+	//		request.disconnect();
+	//		final JsonArray rootobj = root.getAsJsonArray(); //May be an array, may be an object.
+	}
 
 //**************************************************************************************************
 //  Getter/Setter Methods
 //**************************************************************************************************
-	public String getPrintServerUrl() {
-		return printServerUrl;
-	}
-
-	public String getCookie() {
-		return cookie;
-	}
-
-	public void setCookie(String cookie) {
-		this.cookie = cookie;
-	}
-
-	public long getPollTime() {
-		return pollTime;
-	}
-
-	public void setPollTime(long pollTime) {
-		this.pollTime = pollTime;
-	}
-
-	public boolean getSslTrustAll() {
-		return sslTrustAll;
-	}
-
-	public void setSslTrustAll(boolean sslTrustAll) {
-		this.sslTrustAll = sslTrustAll;
-	}
 
 //**************************************************************************************************
 //  Static Methods
 //**************************************************************************************************
-	public static void main(String[] args) {
-		String printServerUrl = null;//-url
-		String cookie = null;//-jsessionid
-		boolean sslTrustAll = false;//-sslTrust
-		for (int a = 0; a < args.length; a++) {
-			if (args[a].equals("-url") && a + 1 < args.length) {
-				printServerUrl = args[a+1];
-			}
-			if (args[a].equals("-cookie") && a + 1 < args.length) {
-				cookie = args[a+1];
-			}
-			if (args[a].equals("-sslTrust")) {
-				sslTrustAll = true;
-			}
-		}
-		final PrintClient pc = new PrintClient(printServerUrl);
-		pc.setCookie(cookie);
-		pc.setSslTrustAll(sslTrustAll);
-		pc.start();
-	}
-
 
 //**************************************************************************************************
 //  Inner Classes

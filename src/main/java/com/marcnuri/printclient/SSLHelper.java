@@ -13,40 +13,34 @@
  * the License.
  */
 /*
- * PrintClient.java
+ * SSLHelper.java
  *
- * Created on 2016-12-06, 10:21
+ * Created on 2016-12-10, 19:32
  */
 package com.marcnuri.printclient;
 
-import java.util.Timer;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.security.GeneralSecurityException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 /**
- *
- * Created by Marc Nuri <marc@marcnuri.com> on 2016-12-06.
+ * Created by Marc Nuri <marc@marcnuri.com> on 2016-12-10.
  */
-public class PrintClient {
+public final class SSLHelper {
 
 //**************************************************************************************************
 //  Fields
 //**************************************************************************************************
-	private static final long DEFAULT_POLL_TIME = 1000L;
-	private static final int HTTP_STATUS_CODE_UNAUTHORIZED = 401;
-	private final Timer timer;
-	private boolean started;
-	private String printServerUrl;
-	private String cookie;
-	private boolean sslTrustAll;
-	private long pollTime = DEFAULT_POLL_TIME;
-
 
 //**************************************************************************************************
 //  Constructors
 //**************************************************************************************************
-	public PrintClient(String printServerUrl) {
-		this.started = false;
-		this.printServerUrl = printServerUrl;
-		this.timer = new Timer();
+	private SSLHelper(){
+
 	}
 
 //**************************************************************************************************
@@ -60,72 +54,36 @@ public class PrintClient {
 //**************************************************************************************************
 //  Other Methods
 //**************************************************************************************************
-	private void start(){
-		if(!started) {
-			timer.schedule(new ServerPollThread(this), 0L, getPollTime());
-			started=true;
-		}
-	}
-
 
 //**************************************************************************************************
 //  Getter/Setter Methods
 //**************************************************************************************************
-	public String getPrintServerUrl() {
-		return printServerUrl;
-	}
-
-	public String getCookie() {
-		return cookie;
-	}
-
-	public void setCookie(String cookie) {
-		this.cookie = cookie;
-	}
-
-	public long getPollTime() {
-		return pollTime;
-	}
-
-	public void setPollTime(long pollTime) {
-		this.pollTime = pollTime;
-	}
-
-	public boolean getSslTrustAll() {
-		return sslTrustAll;
-	}
-
-	public void setSslTrustAll(boolean sslTrustAll) {
-		this.sslTrustAll = sslTrustAll;
-	}
 
 //**************************************************************************************************
 //  Static Methods
 //**************************************************************************************************
-	public static void main(String[] args) {
-		String printServerUrl = null;//-url
-		String cookie = null;//-jsessionid
-		boolean sslTrustAll = false;//-sslTrust
-		for (int a = 0; a < args.length; a++) {
-			if (args[a].equals("-url") && a + 1 < args.length) {
-				printServerUrl = args[a+1];
-			}
-			if (args[a].equals("-cookie") && a + 1 < args.length) {
-				cookie = args[a+1];
-			}
-			if (args[a].equals("-sslTrust")) {
-				sslTrustAll = true;
-			}
-		}
-		final PrintClient pc = new PrintClient(printServerUrl);
-		pc.setCookie(cookie);
-		pc.setSslTrustAll(sslTrustAll);
-		pc.start();
-	}
-
 
 //**************************************************************************************************
 //  Inner Classes
 //**************************************************************************************************
+	public static final void disableSSLCertificateChecking() throws GeneralSecurityException {
+		TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
+			public X509Certificate[] getAcceptedIssuers() {
+				return null;
+			}
 
+			@Override
+			public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+				// Not implemented
+			}
+
+			@Override
+			public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+				// Not implemented
+			}
+		} };
+		SSLContext sc = SSLContext.getInstance("TLS");
+		sc.init(null, trustAllCerts, new java.security.SecureRandom());
+		HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+	}
 }

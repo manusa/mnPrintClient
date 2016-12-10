@@ -21,6 +21,7 @@ package com.marcnuri.printclient;
 
 /**
  * Created by Marc Nuri <marc@marcnuri.com> on 2016-12-10.
+ *
  */
 public class PrintTask {
 
@@ -29,12 +30,12 @@ public class PrintTask {
 //**************************************************************************************************
 	private final String url;
 	private final String printerName;
-	private final int copies;
+	private final Integer copies;
 
 //**************************************************************************************************
 //  Constructors
 //**************************************************************************************************
-	public PrintTask(String url, String printerName, int copies) {
+	public PrintTask(String url, String printerName, Integer copies) {
 		this.url = url;
 		this.printerName = printerName;
 		this.copies = copies;
@@ -63,7 +64,7 @@ public class PrintTask {
 		return printerName;
 	}
 
-	public int getCopies() {
+	public Integer getCopies() {
 		return copies;
 	}
 

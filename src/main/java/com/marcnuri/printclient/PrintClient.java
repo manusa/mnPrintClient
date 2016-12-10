@@ -30,7 +30,7 @@ public class PrintClient {
 //**************************************************************************************************
 //  Fields
 //**************************************************************************************************
-	private static final long DEFAULT_POLL_TIME = 1000L;
+	private static final long DEFAULT_POLL_TIME = 5000L;
 	private static final int HTTP_STATUS_CODE_UNAUTHORIZED = 401;
 	private final Timer timer;
 	private boolean started;

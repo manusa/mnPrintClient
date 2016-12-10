@@ -20,6 +20,7 @@
 package com.marcnuri.printclient;
 
 import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonValue;
 
 import java.io.IOException;
@@ -28,6 +29,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.GeneralSecurityException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -35,12 +38,16 @@ import java.util.logging.Logger;
 
 /**
  * Created by Marc Nuri <marc@marcnuri.com> on 2016-12-10.
+ *
  */
 public class ServerPollThread extends TimerTask{
 
 //**************************************************************************************************
 //  Fields
 //**************************************************************************************************
+	private static final String PARAMETER_URL = "url";
+	private static final String PARAMETER_PRINTER_NAME = "printerName";
+	private static final String PARAMETER_COPIES = "copies";
 	private final PrintClient printClient;
 	private AtomicBoolean polling;
 
@@ -65,7 +72,7 @@ public class ServerPollThread extends TimerTask{
 		if(!polling.get()){
 			polling.set(true);
 			try {
-				pollServer();
+				final List<PrintTask> tasks = pollServer();
 			} catch (IOException e) {
 				Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "", e);
 			}
@@ -76,7 +83,8 @@ public class ServerPollThread extends TimerTask{
 //**************************************************************************************************
 //  Other Methods
 //**************************************************************************************************
-	private void pollServer() throws IOException {
+	private List<PrintTask> pollServer() throws IOException {
+		final List<PrintTask> tasks = new ArrayList<PrintTask>();
 		//Don't check ssl security, validate any certificate. Useful for self-signed certificates
 		//or certificates from non-authorities.
 		if(printClient.getSslTrustAll()) {
@@ -95,15 +103,18 @@ public class ServerPollThread extends TimerTask{
 		request.connect();
 		final JsonValue jsv = Json.parse(new InputStreamReader((InputStream) request.getContent()));
 		if(jsv.isArray()){
-
+			final JsonArray jsonArray = jsv.asArray();
+			for(JsonValue t : jsonArray.values()){
+				if(t.isObject()){
+					tasks.add(new PrintTask(
+						t.asObject().getString(PARAMETER_URL, null),
+						t.asObject().getString(PARAMETER_PRINTER_NAME, null),
+						t.asObject().getInt(PARAMETER_COPIES, 0)
+					));
+				}
+			}
 		}
-
-	//		Json
-	//		final int response = request.getResponseCode();
-	//		final JsonParser jp = new JsonParser(); //from gson
-	//		final JsonElement root = jp.parse(new InputStreamReader((InputStream) request.getContent())); //Convert the input stream to a json element
-	//		request.disconnect();
-	//		final JsonArray rootobj = root.getAsJsonArray(); //May be an array, may be an object.
+		return tasks;
 	}
 
 //**************************************************************************************************

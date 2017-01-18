@@ -31,12 +31,19 @@ public class PrintClient {
 //  Fields
 //**************************************************************************************************
 	private static final long DEFAULT_POLL_TIME = 5000L;
+	private static final int DEFAULT_COPIES = 1;
+	private static final String ARGUMENT_URL = "url";
+	private static final String ARGUMENT_COOKIE = "cookie";
+	private static final String ARGUMENT_PRINTER_NAME = "printerName";
+	private static final String ARGUMENT_COPIES = "copies";
 	private static final int HTTP_STATUS_CODE_UNAUTHORIZED = 401;
 	private final Timer timer;
 	private boolean started;
 	private String printServerUrl;
 	private String cookie;
 	private boolean sslTrustAll;
+	private String defaultPrinterName;
+	private int defaultCopies = DEFAULT_COPIES;
 	private long pollTime = DEFAULT_POLL_TIME;
 
 
@@ -99,19 +106,45 @@ public class PrintClient {
 		this.sslTrustAll = sslTrustAll;
 	}
 
-//**************************************************************************************************
+	public String getDefaultPrinterName() {
+		return defaultPrinterName;
+	}
+
+	public void setDefaultPrinterName(String defaultPrinterName) {
+		this.defaultPrinterName = defaultPrinterName;
+	}
+
+	public int getDefaultCopies() {
+		return defaultCopies;
+	}
+
+	public void setDefaultCopies(int defaultCopies) {
+		this.defaultCopies = defaultCopies;
+	}
+
+	//**************************************************************************************************
 //  Static Methods
 //**************************************************************************************************
 	public static void main(String[] args) {
 		String printServerUrl = null;//-url
-		String cookie = null;//-jsessionid
+		String cookie = null;//-cookie
+		String defaultPrinterName = null;
+		Integer defaultCopies = null;
 		boolean sslTrustAll = false;//-sslTrust
 		for (int a = 0; a < args.length; a++) {
-			if (args[a].equals("-url") && a + 1 < args.length) {
+			if (args[a].equals("-"+ARGUMENT_URL) && a + 1 < args.length) {
 				printServerUrl = args[a+1];
 			}
-			if (args[a].equals("-cookie") && a + 1 < args.length) {
+			if (args[a].equals("-"+ARGUMENT_COOKIE) && a + 1 < args.length) {
 				cookie = args[a+1];
+			}
+			if (args[a].equals("-"+ARGUMENT_PRINTER_NAME) && a + 1 < args.length) {
+				defaultPrinterName = args[a+1];
+			}
+			if (args[a].equals("-"+ARGUMENT_COPIES) && a + 1 < args.length) {
+				try {
+					defaultCopies = Integer.parseInt(args[a + 1]);
+				} catch(NumberFormatException ex){}
 			}
 			if (args[a].equals("-sslTrust")) {
 				sslTrustAll = true;
@@ -119,6 +152,8 @@ public class PrintClient {
 		}
 		final PrintClient pc = new PrintClient(printServerUrl);
 		pc.setCookie(cookie);
+		pc.setDefaultPrinterName(defaultPrinterName);
+		pc.setDefaultCopies(defaultCopies);
 		pc.setSslTrustAll(sslTrustAll);
 		pc.start();
 	}

@@ -19,7 +19,7 @@ mainClassName = "com.marcnuri.printclient.PrintClient"
 
 //Default test Arguments for commandLine
 run {
-    args = ["-url","http://127.0.0.1:9991/JSONData?A=PRINT_JOBS",
+    args = ["-url","http://127.0.0.1:9991/JSONData?A=PRINT_JOBS&TOKEN=bf589472-6db1-47e5-a438-4ddbb04fd983",
             "-sslTrust",
             "-cookie", "JSESSIONID=1guw4i1wszqpp1wlrlxmmxenxa"]
 }

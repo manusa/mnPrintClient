@@ -1,4 +1,8 @@
 *.class
+*.bat
+
+#Gradle
+gradlew
 
 #IntelliJ
 .idea/

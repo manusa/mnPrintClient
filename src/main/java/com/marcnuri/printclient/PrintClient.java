@@ -43,7 +43,7 @@ public class PrintClient {
 	private String cookie;
 	private boolean sslTrustAll;
 	private String defaultPrinterName;
-	private int defaultCopies = DEFAULT_COPIES;
+	private Integer defaultCopies = DEFAULT_COPIES;
 	private long pollTime = DEFAULT_POLL_TIME;
 
 
@@ -114,11 +114,11 @@ public class PrintClient {
 		this.defaultPrinterName = defaultPrinterName;
 	}
 
-	public int getDefaultCopies() {
+	public Integer getDefaultCopies() {
 		return defaultCopies;
 	}
 
-	public void setDefaultCopies(int defaultCopies) {
+	public void setDefaultCopies(Integer defaultCopies) {
 		this.defaultCopies = defaultCopies;
 	}
 

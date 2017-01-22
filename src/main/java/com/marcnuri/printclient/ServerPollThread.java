@@ -23,14 +23,11 @@ import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonValue;
 import com.sun.pdfview.PDFFile;
-import com.sun.pdfview.PDFPage;
-import com.sun.pdfview.PDFRenderer;
 
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
 import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaTray;
-import java.awt.*;
 import java.awt.print.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -43,7 +40,6 @@ import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -53,7 +49,7 @@ import java.util.regex.Pattern;
  * Created by Marc Nuri <marc@marcnuri.com> on 2016-12-10.
  *
  */
-public class ServerPollThread extends TimerTask{
+public class ServerPollThread extends AbstractPollThread{
 
 //**************************************************************************************************
 //  Fields
@@ -62,17 +58,14 @@ public class ServerPollThread extends TimerTask{
 	private static final String PARAMETER_PRINTER_NAME = "printerName";
 	private static final String PARAMETER_COPIES = "copies";
 	private static final String HEADER_CONTENT_DISPOSITION = "Content-Disposition";
-	private final PrintClient printClient;
 	private final Pattern contentDispositionP;
-	private boolean polling;
 
 //**************************************************************************************************
 //  Constructors
 //**************************************************************************************************
 	public ServerPollThread(PrintClient printClient) {
-		this.printClient = printClient;
+		super(printClient);
 		contentDispositionP = Pattern.compile("filename[^;=\\n]*=((['\"]).*?\\2|[^;\\n]*)");
-		polling = false;
 	}
 
 //**************************************************************************************************
@@ -83,69 +76,7 @@ public class ServerPollThread extends TimerTask{
 //  Overridden Methods
 //**************************************************************************************************
 	@Override
-	public void run() {
-		//If task is scheduled using a repeating period this is unnecessary
-		if(!polling){
-			polling=true;
-			try {
-				final List<PrintTask> tasks = pollServer();
-				print(tasks);
-			} catch (IOException e) {
-				Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "", e);
-			}
-			polling=false;
-		}
-	}
-
-//**************************************************************************************************
-//  Other Methods
-//**************************************************************************************************
-	private List<PrintTask> pollServer() throws IOException {
-		final List<PrintTask> tasks = new ArrayList<PrintTask>();
-		//Don't check ssl security, validate any certificate. Useful for self-signed certificates
-		//or certificates from non-authorities.
-		if(printClient.getSslTrustAll()) {
-			try {
-				SSLHelper.disableSSLCertificateChecking();
-			} catch (GeneralSecurityException e) {
-				Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "", e);
-			}
-		}
-		final URL url = new URL(printClient.getPrintServerUrl());
-		final HttpURLConnection request = (HttpURLConnection)url.openConnection();
-		//Place JSESSIONID in request header to emulate a user session
-		if(printClient.getCookie() != null && !printClient.getCookie().isEmpty()) {
-			request.setRequestProperty("Cookie", printClient.getCookie());
-		}
-		request.connect();
-		final JsonValue jsv = Json.parse(new InputStreamReader((InputStream) request.getContent()));
-		if(jsv.isArray()){
-			final JsonArray jsonArray = jsv.asArray();
-			for(JsonValue t : jsonArray.values()){
-				if(t.isObject()){
-					tasks.add(new PrintTask(
-						t.asObject().getString(PARAMETER_URL, null),
-						t.asObject().getString(PARAMETER_PRINTER_NAME, null),
-						t.asObject().getInt(PARAMETER_COPIES, 0)
-					));
-				}
-			}
-		}
-		return tasks;
-	}
-
-	private void print(List<PrintTask> tasks){
-		for(PrintTask pt : tasks){
-			try {
-				print(pt);
-			} catch (Exception e) {
-				Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "",
-						e);
-			}
-		}
-	}
-
-	private void print(PrintTask pt) throws IOException, PrinterException{
+	protected final void print(PrintTask pt) throws IOException, PrinterException {
 		final URLConnection uc = new URL(pt.getUrl()).openConnection();
 		final InputStream is = uc.getInputStream();
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -221,6 +152,46 @@ public class ServerPollThread extends TimerTask{
 			}
 		}
 	};
+	@Override
+	protected final List<PrintTask> poll() throws IOException {
+		final List<PrintTask> tasks = new ArrayList<PrintTask>();
+		//Don't check ssl security, validate any certificate. Useful for self-signed certificates
+		//or certificates from non-authorities.
+		if(getPrintClient().getSslTrustAll()) {
+			try {
+				SSLHelper.disableSSLCertificateChecking();
+			} catch (GeneralSecurityException e) {
+				Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "", e);
+			}
+		}
+		final URL url = new URL(getPrintClient().getPrintServerUrl());
+		final HttpURLConnection request = (HttpURLConnection)url.openConnection();
+		//Place JSESSIONID in request header to emulate a user session
+		if(getPrintClient().getCookie() != null && !getPrintClient().getCookie().isEmpty()) {
+			request.setRequestProperty("Cookie", getPrintClient().getCookie());
+		}
+		request.connect();
+		final JsonValue jsv = Json.parse(new InputStreamReader((InputStream) request.getContent()));
+		if(jsv.isArray()){
+			final JsonArray jsonArray = jsv.asArray();
+			for(JsonValue t : jsonArray.values()){
+				if(t.isObject()){
+					tasks.add(new PrintTask(
+							t.asObject().getString(PARAMETER_URL, null),
+							t.asObject().getString(PARAMETER_PRINTER_NAME, null),
+							t.asObject().getInt(PARAMETER_COPIES, 0)
+					));
+				}
+			}
+		}
+		return tasks;
+	}
+
+//**************************************************************************************************
+//  Other Methods
+//**************************************************************************************************
+
+
 //**************************************************************************************************
 //  Getter/Setter Methods
 //**************************************************************************************************
@@ -232,111 +203,5 @@ public class ServerPollThread extends TimerTask{
 //**************************************************************************************************
 //  Inner Classes
 //**************************************************************************************************
-	private static final class ClipPrint implements Printable {
 
-		private final PDFFile file;
-		private final List<Clip> clips;
-
-		public ClipPrint(PDFFile file,
-						 List<Clip> clips) {
-			this.file = file;
-			this.clips = clips;
-		}
-
-		public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)
-				throws PrinterException {
-			// don't bother if the page number is out of range.
-			if ((pageIndex >= 0) && (pageIndex < clips.size())) {
-				final Clip clip = clips.get(pageIndex);
-				final PDFPage page = file.getPage(clip.pageNumber);
-				final Graphics2D g2 = (Graphics2D) graphics;
-				g2.setRenderingHint(
-						RenderingHints.KEY_INTERPOLATION,
-						RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-				g2.setRenderingHint(
-						RenderingHints.KEY_RENDERING,
-						RenderingHints.VALUE_RENDER_QUALITY);
-				final PDFRenderer pgs = new PDFRenderer(page, g2,
-						new Rectangle(
-								(int) pageFormat.getImageableX(),
-								(int) pageFormat.getImageableY(),
-								(int) pageFormat.getImageableWidth(),
-								(int) pageFormat.getImageableHeight()),
-						clip.clip, Color.WHITE);
-				try {
-					page.waitForFinish();
-					pgs.run();
-				} catch (InterruptedException ie) {
-				}
-				return PAGE_EXISTS;
-			} else {
-				return NO_SUCH_PAGE;
-			}
-		}
-	}
-
-	private static final class Clip {
-
-		/**
-		 * In pdf Coordinates
-		 *
-		 * PDF COORDINATES ARE (0,0) in (left,bottom)
-		 */
-		private final Rectangle clip;
-		/**
-		 * The number of the page in the PDF FIle
-		 */
-		private final int pageNumber;
-
-		private Clip(Rectangle clip, int pageNumber) {
-			this.clip = clip;
-			this.pageNumber = pageNumber;
-		}
-
-		private static List<Clip> fromPdf(PageFormat pageFormat, PDFFile pdf,
-										  int pageNumber) {
-			final PDFPage pdfPage = pdf.getPage(pageNumber);
-			//Page width in the final pageFormat
-			final double pWidth = pageFormat.getImageableWidth();
-			//Page Height in the final page format
-			final double pHeight = pageFormat.getImageableHeight();
-			//Original PDF WIDTH (PDF SIZE)
-			final double pdfWidth = pdfPage.getBBox().getWidth();
-			//Original PDF HEIGHT
-			final double pdfHeight = pdfPage.getBBox().getHeight();
-			//HEIGHT OF A SCALED PDF when changing the width and keeping aspect ratio
-			final double scaledHeight = (pdfHeight * (pWidth / pdfWidth));
-			//Maximum number of tiles (integer)
-			final int tiles = (int) Math.ceil(scaledHeight / pHeight);
-			//Tile height
-			final double pdfTileHeight = pdfHeight / (scaledHeight / pHeight);
-			final List<Clip> clips = new ArrayList<Clip>(tiles);
-			//PDF COORDINATES ARE (0,0) in (left,bottom) (We go from the top down)
-			int y = (int) pdfHeight;
-			int x = 0;
-			for (int it = 0; it < tiles; it++) {
-				y -= (int) (pdfTileHeight);
-				final Rectangle temp = new Rectangle(x, y,
-						(int) pdfWidth, (int) pdfTileHeight);
-				clips.add(new Clip(temp, pageNumber));
-			}
-			return clips;
-		}
-
-		private static Clip scaledFromPdf(PageFormat pageFormat, PDFFile pdf, int pageNumber){
-//			final PDFPage pdfPage = pdf.getPage(pageNumber);
-//			//Page width in the final pageFormat
-//			final double pWidth = pageFormat.getImageableWidth();
-//			//Page Height in the final page format
-//			final double pHeight = pageFormat.getImageableHeight();
-//			//Original PDF WIDTH
-//			final double pdfWidth = pdfPage.getBBox().getWidth();
-//			//Original PDF HEIGHT
-//			final double pdfHeight = pdfPage.getBBox().getHeight();
-//			//Scale ratio
-//			final double widthRatio = pWidth /pdfWidth;
-//			final double heightRatio = pHeight/pdfHeight;
-			return new Clip(null, pageNumber);
-		}
-	}
 }

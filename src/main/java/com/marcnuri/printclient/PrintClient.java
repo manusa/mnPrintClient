@@ -33,13 +33,23 @@ public class PrintClient {
 	private static final long DEFAULT_POLL_TIME = 5000L;
 	private static final int DEFAULT_COPIES = 1;
 	private static final String ARGUMENT_URL = "url";
+	private static final String ARGUMENT_DIRECTORY = "dir";
 	private static final String ARGUMENT_COOKIE = "cookie";
 	private static final String ARGUMENT_PRINTER_NAME = "printerName";
 	private static final String ARGUMENT_COPIES = "copies";
 	private static final int HTTP_STATUS_CODE_UNAUTHORIZED = 401;
+	private static final String HELP = "\n" +
+		"##############################################################################################################\n" +
+		"# mnPrintClient                                                                                              #\n" +
+		"##############################################################################################################\n" +
+		" Expected arguments:\n" +
+		"     url: Url to poll with a valid JSON response\n" +
+		"     dir: Directory to poll where pdf files are placed to print\n"
+			;
 	private final Timer timer;
 	private boolean started;
 	private String printServerUrl;
+	private String directory;
 	private String cookie;
 	private boolean sslTrustAll;
 	private String defaultPrinterName;
@@ -50,9 +60,8 @@ public class PrintClient {
 //**************************************************************************************************
 //  Constructors
 //**************************************************************************************************
-	public PrintClient(String printServerUrl) {
+	public PrintClient() {
 		this.started = false;
-		this.printServerUrl = printServerUrl;
 		this.timer = new Timer();
 	}
 
@@ -80,6 +89,18 @@ public class PrintClient {
 //**************************************************************************************************
 	public String getPrintServerUrl() {
 		return printServerUrl;
+	}
+
+	public void setPrintServerUrl(String printServerUrl) {
+		this.printServerUrl = printServerUrl;
+	}
+
+	public String getDirectory() {
+		return directory;
+	}
+
+	public void setDirectory(String directory) {
+		this.directory = directory;
 	}
 
 	public String getCookie() {
@@ -127,6 +148,7 @@ public class PrintClient {
 //**************************************************************************************************
 	public static void main(String[] args) {
 		String printServerUrl = null;//-url
+		String directory = null;//-dir
 		String cookie = null;//-cookie
 		String defaultPrinterName = null;
 		Integer defaultCopies = null;
@@ -134,6 +156,9 @@ public class PrintClient {
 		for (int a = 0; a < args.length; a++) {
 			if (args[a].equals("-"+ARGUMENT_URL) && a + 1 < args.length) {
 				printServerUrl = args[a+1];
+			}
+			if (args[a].equals("-"+ARGUMENT_DIRECTORY) && a + 1 < args.length) {
+				directory = args[a+1];
 			}
 			if (args[a].equals("-"+ARGUMENT_COOKIE) && a + 1 < args.length) {
 				cookie = args[a+1];
@@ -150,7 +175,13 @@ public class PrintClient {
 				sslTrustAll = true;
 			}
 		}
-		final PrintClient pc = new PrintClient(printServerUrl);
+		if(printServerUrl == null && directory == null){
+			System.out.println(HELP);
+			return;
+		}
+		final PrintClient pc = new PrintClient();
+		pc.setPrintServerUrl(printServerUrl);
+		pc.setDirectory(directory);
 		pc.setCookie(cookie);
 		pc.setDefaultPrinterName(defaultPrinterName);
 		pc.setDefaultCopies(defaultCopies);

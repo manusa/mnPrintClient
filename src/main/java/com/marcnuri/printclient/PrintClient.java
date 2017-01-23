@@ -32,8 +32,10 @@ public class PrintClient {
 //**************************************************************************************************
 	private static final long DEFAULT_POLL_TIME = 5000L;
 	private static final int DEFAULT_COPIES = 1;
+	private static final String ARGUMENT_HELP = "help";
 	private static final String ARGUMENT_URL = "url";
 	private static final String ARGUMENT_DIRECTORY = "dir";
+	private static final String ARGUMENT_PROCESSED_DIRECTORY = "processed";
 	private static final String ARGUMENT_COOKIE = "cookie";
 	private static final String ARGUMENT_PRINTER_NAME = "printerName";
 	private static final String ARGUMENT_COPIES = "copies";
@@ -42,14 +44,19 @@ public class PrintClient {
 		"##############################################################################################################\n" +
 		"# mnPrintClient                                                                                              #\n" +
 		"##############################################################################################################\n" +
-		" Expected arguments:\n" +
-		"     url: Url to poll with a valid JSON response\n" +
-		"     dir: Directory to poll where pdf files are placed to print\n"
+		"\n2017 www.marcnuri.com\n\n" +
+		"Usage: mnprintclient -[dir|url] url [options]\n" +
+		"Options:\n" +
+		"    -url: Url to poll with a valid JSON response\n" +
+		"    -dir: Directory to poll where pdf files are placed to print\n" +
+		"    -processed: Directory to move printed pdf files\n" +
+		"    --help: Prints this page"
 			;
 	private final Timer timer;
 	private boolean started;
 	private String printServerUrl;
 	private String directory;
+	private String processedDirectory;
 	private String cookie;
 	private boolean sslTrustAll;
 	private String defaultPrinterName;
@@ -78,7 +85,12 @@ public class PrintClient {
 //**************************************************************************************************
 	private void start(){
 		if(!started) {
-			timer.schedule(new ServerPollThread(this), 0L, getPollTime());
+			if(getPrintServerUrl() != null && !getPrintServerUrl().isEmpty()){
+				timer.schedule(new ServerPollThread(this), 0L, getPollTime());
+			}
+			if(getDirectory() != null && !getDirectory().isEmpty()){
+				timer.schedule(new DirectoryPollThread(this), 0L, getPollTime());
+			}
 			started=true;
 		}
 	}
@@ -101,6 +113,14 @@ public class PrintClient {
 
 	public void setDirectory(String directory) {
 		this.directory = directory;
+	}
+
+	public String getProcessedDirectory() {
+		return processedDirectory;
+	}
+
+	public void setProcessedDirectory(String processedDirectory) {
+		this.processedDirectory = processedDirectory;
 	}
 
 	public String getCookie() {
@@ -143,22 +163,30 @@ public class PrintClient {
 		this.defaultCopies = defaultCopies;
 	}
 
-	//**************************************************************************************************
+//**************************************************************************************************
 //  Static Methods
 //**************************************************************************************************
 	public static void main(String[] args) {
+		boolean help = false;
 		String printServerUrl = null;//-url
 		String directory = null;//-dir
+		String processedDirectory = null;//-processed
 		String cookie = null;//-cookie
 		String defaultPrinterName = null;
 		Integer defaultCopies = null;
 		boolean sslTrustAll = false;//-sslTrust
 		for (int a = 0; a < args.length; a++) {
+			if (args[a].equals("--"+ARGUMENT_HELP) && a + 1 < args.length) {
+				help = true;
+			}
 			if (args[a].equals("-"+ARGUMENT_URL) && a + 1 < args.length) {
 				printServerUrl = args[a+1];
 			}
 			if (args[a].equals("-"+ARGUMENT_DIRECTORY) && a + 1 < args.length) {
 				directory = args[a+1];
+			}
+			if (args[a].equals("-"+ARGUMENT_PROCESSED_DIRECTORY) && a + 1 < args.length) {
+				processedDirectory = args[a+1];
 			}
 			if (args[a].equals("-"+ARGUMENT_COOKIE) && a + 1 < args.length) {
 				cookie = args[a+1];
@@ -175,13 +203,14 @@ public class PrintClient {
 				sslTrustAll = true;
 			}
 		}
-		if(printServerUrl == null && directory == null){
+		if(help | (printServerUrl == null && directory == null)){
 			System.out.println(HELP);
 			return;
 		}
 		final PrintClient pc = new PrintClient();
 		pc.setPrintServerUrl(printServerUrl);
 		pc.setDirectory(directory);
+		pc.setProcessedDirectory(processedDirectory);
 		pc.setCookie(cookie);
 		pc.setDefaultPrinterName(defaultPrinterName);
 		pc.setDefaultCopies(defaultCopies);

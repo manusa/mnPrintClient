@@ -9,10 +9,15 @@ import com.sun.pdfview.PDFFile;
 import com.sun.pdfview.PDFPage;
 import com.sun.pdfview.PDFRenderer;
 
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
+import javax.print.attribute.standard.Media;
+import javax.print.attribute.standard.MediaTray;
 import java.awt.*;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +48,8 @@ public abstract class AbstractPollThread extends TimerTask {
 //  Abstract Methods
 //**************************************************************************************************
 	protected abstract List<PrintTask> poll() throws IOException;
-	protected abstract void print(PrintTask pt) throws IOException, PrinterException;
+//	protected abstract PrinterJob getPrintJob(PrintTask pt)  throws IOException ;
+	protected abstract void print(PrintTask pt, PrinterJob pjob) throws IOException, PrinterException;
 
 //**************************************************************************************************
 //  Overridden Methods
@@ -66,7 +72,7 @@ public abstract class AbstractPollThread extends TimerTask {
 //**************************************************************************************************
 //  Other Methods
 //**************************************************************************************************
-	protected final void print(List<PrintTask> tasks){
+	private void print(List<PrintTask> tasks){
 		for(PrintTask pt : tasks){
 			try {
 				print(pt);
@@ -75,6 +81,35 @@ public abstract class AbstractPollThread extends TimerTask {
 						e);
 			}
 		}
+	}
+
+	private void print(PrintTask pt) throws PrinterException, IOException{
+		//////////////////////////////////////////////////////////////
+		//Create PrinterJob
+		final PrinterJob pjob= PrinterJob.getPrinterJob();
+		//Set printer name
+		final PrintService[] services = PrintServiceLookup.lookupPrintServices(null, null);
+		for(PrintService srv : PrintServiceLookup.lookupPrintServices(null, null)){
+			if(srv.getName().equalsIgnoreCase(pt.getPrinterName())){
+				//Important to traverse media's so that they are available later on.
+				final Media[] res = (Media[]) srv.getSupportedAttributeValues(
+						Media.class, null, null);
+				for (Media temp : res) {
+					if (temp instanceof MediaTray) {
+						Object trayCat = srv.getSupportedAttributeValues(
+								((MediaTray) temp).getCategory(), null, null);
+						trayCat = null;
+					}
+				}
+				//Full Traverse Of possible services:
+				for (Class c : srv.getSupportedAttributeCategories()) {
+					Object temp = srv.getSupportedAttributeValues(c, null, null);
+				}
+				pjob.setPrintService(srv);
+				break;
+			}
+		}
+		print(pt, pjob);
 	}
 
 //**************************************************************************************************

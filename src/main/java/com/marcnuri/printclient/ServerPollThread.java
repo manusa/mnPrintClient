@@ -24,10 +24,6 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonValue;
 import com.sun.pdfview.PDFFile;
 
-import javax.print.PrintService;
-import javax.print.PrintServiceLookup;
-import javax.print.attribute.standard.Media;
-import javax.print.attribute.standard.MediaTray;
 import java.awt.print.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -76,7 +72,7 @@ public class ServerPollThread extends AbstractPollThread{
 //  Overridden Methods
 //**************************************************************************************************
 	@Override
-	protected final void print(PrintTask pt) throws IOException, PrinterException {
+	protected final void print(PrintTask pt, PrinterJob pjob) throws IOException, PrinterException {
 		final URLConnection uc = new URL(pt.getUrl()).openConnection();
 		final InputStream is = uc.getInputStream();
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -92,31 +88,6 @@ public class ServerPollThread extends AbstractPollThread{
 		final ByteBuffer bb = ByteBuffer.wrap(baos.toByteArray());
 		if(bb != null){
 			final PDFFile pdfFile = new PDFFile(bb);
-			//////////////////////////////////////////////////////////////
-			//Create PrinterJob
-			final PrinterJob pjob= PrinterJob.getPrinterJob();
-			//Set printer name
-			final PrintService[] services = PrintServiceLookup.lookupPrintServices(null, null);
-			for(PrintService srv : PrintServiceLookup.lookupPrintServices(null, null)){
-				if(srv.getName().equalsIgnoreCase(pt.getPrinterName())){
-					//Important to traverse media's so that they are available later on.
-					final Media[] res = (Media[]) srv.getSupportedAttributeValues(
-							Media.class, null, null);
-					for (Media temp : res) {
-						if (temp instanceof MediaTray) {
-							Object trayCat = srv.getSupportedAttributeValues(
-									((MediaTray) temp).getCategory(), null, null);
-							trayCat = null;
-						}
-					}
-					//Full Traverse Of possible services:
-					for (Class c : srv.getSupportedAttributeCategories()) {
-						Object temp = srv.getSupportedAttributeValues(c, null, null);
-					}
-					pjob.setPrintService(srv);
-					break;
-				}
-			}
 			//Rest of Print Job properties
 			final String contentDisposition = uc.getHeaderField(HEADER_CONTENT_DISPOSITION);
 			String fileName = "";
@@ -151,7 +122,8 @@ public class ServerPollThread extends AbstractPollThread{
 				pjob.print();
 			}
 		}
-	};
+	}
+
 	@Override
 	protected final List<PrintTask> poll() throws IOException {
 		final List<PrintTask> tasks = new ArrayList<PrintTask>();

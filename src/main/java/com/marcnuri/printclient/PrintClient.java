@@ -213,7 +213,9 @@ public class PrintClient {
 		pc.setProcessedDirectory(processedDirectory);
 		pc.setCookie(cookie);
 		pc.setDefaultPrinterName(defaultPrinterName);
-		pc.setDefaultCopies(defaultCopies);
+		if(defaultCopies != null) {
+			pc.setDefaultCopies(defaultCopies);
+		}
 		pc.setSslTrustAll(sslTrustAll);
 		pc.start();
 	}

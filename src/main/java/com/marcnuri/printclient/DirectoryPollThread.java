@@ -5,10 +5,12 @@
  */
 package com.marcnuri.printclient;
 
+import com.sun.pdfview.PDFFile;
+
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,7 +46,8 @@ public class DirectoryPollThread extends AbstractPollThread {
 			for(File f : directoryF.listFiles()) {
 				if(f.isFile() && f.getName().length() > PDF_EXTENSION.length()
 						&& f.getName().toUpperCase().endsWith(PDF_EXTENSION)){
-					final PrintTask toAdd = new PrintTask(f.getAbsolutePath(),
+					final PrintTask toAdd = new PrintTask(
+							f.getAbsolutePath(),
 							getPrintClient().getDefaultPrinterName(),
 							getPrintClient().getDefaultCopies());
 					ret.add(toAdd);
@@ -56,7 +59,29 @@ public class DirectoryPollThread extends AbstractPollThread {
 
 	@Override
 	protected final void print(PrintTask pt, PrinterJob pjob) throws IOException, PrinterException {
-
+		final File printFile = new File(pt.getUrl());
+		//Load PDF in memory
+		final InputStream is = new FileInputStream(printFile);
+		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		byte[] buffer = new byte[1024];
+		long count = 0;
+		int n = 0;
+		while (-1 != (n = is.read(buffer))) {
+			baos.write(buffer, 0, n);
+			count += n;
+		}
+		is.close();
+		baos.close();
+		final ByteBuffer bb = ByteBuffer.wrap(baos.toByteArray());
+		if(bb != null){
+			final PDFFile pdfFile = new PDFFile(bb);
+			//Rest of Print Job properties
+			final String fileName = printFile.getName();
+			pjob.setJobName(String.format("printclient.marcnuri.com - %s", fileName));
+			pjob.setCopies(pt.getCopies());
+			//////////////////////////////////////////////////////////////
+			AbstractPollThread.print(pjob,pdfFile);
+		}
 	}
 
 //**************************************************************************************************

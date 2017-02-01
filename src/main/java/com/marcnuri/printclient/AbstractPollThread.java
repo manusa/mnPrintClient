@@ -14,10 +14,7 @@ import javax.print.PrintServiceLookup;
 import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaTray;
 import java.awt.*;
-import java.awt.print.PageFormat;
-import java.awt.print.Printable;
-import java.awt.print.PrinterException;
-import java.awt.print.PrinterJob;
+import java.awt.print.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -122,6 +119,29 @@ public abstract class AbstractPollThread extends TimerTask {
 //**************************************************************************************************
 //  Static Methods
 //**************************************************************************************************
+	protected static final void print(PrinterJob pjob, PDFFile pdfFile) throws PrinterException{
+		final PageFormat pageFormat = pjob.defaultPage();
+		final Paper paper = pageFormat.getPaper();
+		paper.setImageableArea(0, 0, paper.getWidth(), paper.getHeight());
+		pageFormat.setPaper(paper);
+		pjob.validatePage(pageFormat);
+		if(pdfFile.getNumPages() > 0){
+			final List<Clip> clips = new ArrayList<Clip>();
+			for (int p = 1; p < pdfFile.getNumPages() + 1; p++) {
+				//Clip pdf to several pages
+//					clips.addAll(Clip.
+//							fromPdf(pageFormat, pdfFile, p));
+				//Scale page to fit printer page
+				clips.add(Clip.
+						scaledFromPdf(pageFormat, pdfFile, p));
+			}
+			final Book book = new Book();
+			book.append(new ClipPrint(pdfFile, clips),
+					pageFormat, clips.size());
+			pjob.setPageable(book);
+			pjob.print();
+		}
+	}
 
 //**************************************************************************************************
 //  Inner Classes

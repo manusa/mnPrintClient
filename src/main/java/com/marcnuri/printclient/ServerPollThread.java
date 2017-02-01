@@ -100,27 +100,7 @@ public class ServerPollThread extends AbstractPollThread{
 			pjob.setJobName(String.format("printclient.marcnuri.com - %s", fileName));
 			pjob.setCopies(pt.getCopies());
 			//////////////////////////////////////////////////////////////
-			final PageFormat pageFormat = PrinterJob.getPrinterJob().defaultPage();
-			final Paper paper = pageFormat.getPaper();
-			paper.setImageableArea(0, 0, paper.getWidth(), paper.getHeight());
-			pageFormat.setPaper(paper);
-			pjob.validatePage(pageFormat);
-			if(pdfFile.getNumPages() > 0){
-				final List<Clip> clips = new ArrayList<Clip>();
-				for (int p = 1; p < pdfFile.getNumPages() + 1; p++) {
-					//Clip pdf to several pages
-//					clips.addAll(Clip.
-//							fromPdf(pageFormat, pdfFile, p));
-					//Scale page to fit printer page
-					clips.add(Clip.
-							scaledFromPdf(pageFormat, pdfFile, p));
-				}
-				final Book book = new Book();
-				book.append(new ClipPrint(pdfFile, clips),
-						pageFormat, clips.size());
-				pjob.setPageable(book);
-				pjob.print();
-			}
+			AbstractPollThread.print(pjob,pdfFile);
 		}
 	}
 

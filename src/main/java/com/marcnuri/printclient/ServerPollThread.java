@@ -50,6 +50,7 @@ public class ServerPollThread extends AbstractPollThread{
 //**************************************************************************************************
 //  Fields
 //**************************************************************************************************
+	private static final Logger LOG = Logger.getLogger(AbstractPollThread.class.toString());
 	private static final String PARAMETER_URL = "url";
 	private static final String PARAMETER_PRINTER_NAME = "printerName";
 	private static final String PARAMETER_COPIES = "copies";
@@ -109,11 +110,11 @@ public class ServerPollThread extends AbstractPollThread{
 		final List<PrintTask> tasks = new ArrayList<PrintTask>();
 		//Don't check ssl security, validate any certificate. Useful for self-signed certificates
 		//or certificates from non-authorities.
-		if(getPrintClient().getSslTrustAll()) {
+		if(getPrintClient().isSslTrustAll()) {
 			try {
 				SSLHelper.disableSSLCertificateChecking();
 			} catch (GeneralSecurityException e) {
-				Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "", e);
+				LOG.log(Level.SEVERE, "", e);
 			}
 		}
 		final URL url = new URL(getPrintClient().getPrintServerUrl());

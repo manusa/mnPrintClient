@@ -20,6 +20,9 @@
 package com.marcnuri.printclient;
 
 import java.util.Timer;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -32,6 +35,7 @@ public class PrintClient {
 //**************************************************************************************************
 	private static final long DEFAULT_POLL_TIME = 5000L;
 	private static final int DEFAULT_COPIES = 1;
+	private static final String DEFAULT_PROCESSED_DIRECTORY = "processed";
 	private static final String ARGUMENT_HELP = "help";
 	private static final String ARGUMENT_URL = "url";
 	private static final String ARGUMENT_DIRECTORY = "dir";
@@ -45,18 +49,21 @@ public class PrintClient {
 		"# mnPrintClient                                                                                              #\n" +
 		"##############################################################################################################\n" +
 		"\n2017 www.marcnuri.com\n\n" +
+		"Silently print PDF files from your server by reading a JSON parameter list, or from your local computer by \n" +
+		"placing PDF files in the specified directory.\n\n" +
 		"Usage: mnprintclient -[dir|url] url [options]\n" +
 		"Options:\n" +
 		"    -url: Url to poll with a valid JSON response\n" +
 		"    -dir: Directory to poll where pdf files are placed to print\n" +
-		"    -processed: Directory to move printed pdf files\n" +
+		"    -processed: Directory to move printed pdf files in dir mode\n" +
+		"    -cookie: String with cookie to send to server in url mode\n" +
 		"    --help: Prints this page"
 			;
 	private final Timer timer;
 	private boolean started;
 	private String printServerUrl;
 	private String directory;
-	private String processedDirectory;
+	private String processedDirectory = DEFAULT_PROCESSED_DIRECTORY;
 	private String cookie;
 	private boolean sslTrustAll;
 	private String defaultPrinterName;
@@ -139,7 +146,7 @@ public class PrintClient {
 		this.pollTime = pollTime;
 	}
 
-	public boolean getSslTrustAll() {
+	public boolean isSslTrustAll() {
 		return sslTrustAll;
 	}
 
@@ -167,6 +174,7 @@ public class PrintClient {
 //  Static Methods
 //**************************************************************************************************
 	public static void main(String[] args) {
+		//Grab command-line options
 		boolean help = false;
 		String printServerUrl = null;//-url
 		String directory = null;//-dir
@@ -207,10 +215,16 @@ public class PrintClient {
 			System.out.println(HELP);
 			return;
 		}
+		//Set logger
+		Logger.getGlobal().addHandler(new ConsoleHandler());
+		Logger.getGlobal().setLevel(Level.INFO);
+		//Init PrintClient
 		final PrintClient pc = new PrintClient();
 		pc.setPrintServerUrl(printServerUrl);
 		pc.setDirectory(directory);
-		pc.setProcessedDirectory(processedDirectory);
+		if(processedDirectory != null) {
+			pc.setProcessedDirectory(processedDirectory);
+		}
 		pc.setCookie(cookie);
 		pc.setDefaultPrinterName(defaultPrinterName);
 		if(defaultCopies != null) {

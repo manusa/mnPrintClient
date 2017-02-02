@@ -13,6 +13,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Created by Marc Nuri <marc@marcnuri.com> on 2017-01-22.
@@ -22,6 +23,7 @@ public class DirectoryPollThread extends AbstractPollThread {
 //**************************************************************************************************
 //  Fields
 //**************************************************************************************************
+	private static final Logger LOG = Logger.getLogger(DirectoryPollThread.class.toString());
 	private static final String PDF_EXTENSION = "PDF";
 
 //**************************************************************************************************
@@ -42,6 +44,11 @@ public class DirectoryPollThread extends AbstractPollThread {
 	protected final List<PrintTask> poll() throws IOException {
 		final List<PrintTask> ret = new ArrayList<PrintTask>();
 		final File directoryF = new File(getPrintClient().getDirectory());
+		//Check for processed directory
+		final File directoryProcessed = new File(directoryF, getPrintClient().getProcessedDirectory());
+		if(!directoryProcessed.exists() || directoryProcessed.isDirectory()){
+			directoryProcessed.mkdirs();
+		}
 		if(directoryF.exists() && directoryF.isDirectory()){
 			for(File f : directoryF.listFiles()) {
 				if(f.isFile() && f.getName().length() > PDF_EXTENSION.length()
@@ -81,6 +88,11 @@ public class DirectoryPollThread extends AbstractPollThread {
 			pjob.setCopies(pt.getCopies());
 			//////////////////////////////////////////////////////////////
 			AbstractPollThread.print(pjob,pdfFile);
+			LOG.info(String.format("Printed %s", fileName));
+			//////////////////////////////////////////////////////////////
+			printFile.renameTo(
+					new File(getPrintClient().getDirectory() + File.separator+getPrintClient().getProcessedDirectory(),
+					fileName));
 		}
 	}
 

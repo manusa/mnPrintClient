@@ -30,6 +30,7 @@ public abstract class AbstractPollThread extends TimerTask {
 //**************************************************************************************************
 //  Fields
 //**************************************************************************************************
+	private static final Logger LOG = Logger.getLogger(AbstractPollThread.class.toString());
 	private final PrintClient printClient;
 	private boolean polling;
 
@@ -60,7 +61,7 @@ public abstract class AbstractPollThread extends TimerTask {
 				final List<PrintTask> tasks = poll();
 				print(tasks);
 			} catch (IOException e) {
-				Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "", e);
+				LOG.log(Level.SEVERE, "", e);
 			}
 			polling=false;
 		}
@@ -74,8 +75,7 @@ public abstract class AbstractPollThread extends TimerTask {
 			try {
 				print(pt);
 			} catch (Exception e) {
-				Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "",
-						e);
+				LOG.log(Level.SEVERE, "", e);
 			}
 		}
 	}

@@ -45,11 +45,11 @@ public class PrintClient {
 	private static final String ARGUMENT_COPIES = "copies";
 	private static final int HTTP_STATUS_CODE_UNAUTHORIZED = 401;
 	private static final String HELP = "\n" +
-		"##############################################################################################################\n" +
-		"# mnPrintClient                                                                                              #\n" +
-		"##############################################################################################################\n" +
+		"#############################################################################################################\n" +
+		"# mnPrintClient                                                                                             #\n" +
+		"#############################################################################################################\n" +
 		"\n2017 www.marcnuri.com\n\n" +
-		"Silently print PDF files from your server by reading a JSON parameter list, or from your local computer by \n" +
+		"Silently print PDF files from your server by reading a JSON parameter list, or from your local computer by\n" +
 		"placing PDF files in the specified directory.\n\n" +
 		"Usage: mnprintclient -[dir|url] url [options]\n" +
 		"Options:\n" +

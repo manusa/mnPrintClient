@@ -90,9 +90,12 @@ public class DirectoryPollThread extends AbstractPollThread {
 			AbstractPollThread.print(pjob,pdfFile);
 			LOG.info(String.format("Printed %s", fileName));
 			//////////////////////////////////////////////////////////////
-			printFile.renameTo(
-					new File(getPrintClient().getDirectory() + File.separator+getPrintClient().getProcessedDirectory(),
-					fileName));
+			final File destFile = new File(getPrintClient().getDirectory() + File.separator
+					+ getPrintClient().getProcessedDirectory(),fileName);
+			if(destFile.exists()){
+				destFile.delete();
+			}
+			printFile.renameTo(destFile);
 		}
 	}
 

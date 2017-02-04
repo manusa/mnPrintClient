@@ -20,9 +20,7 @@
 package com.marcnuri.printclient;
 
 import java.util.Timer;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.*;
 
 /**
  *
@@ -33,6 +31,7 @@ public class PrintClient {
 //**************************************************************************************************
 //  Fields
 //**************************************************************************************************
+	private static final Logger LOG = Logger.getLogger(PrintClient.class.getPackage().getName());
 	private static final long DEFAULT_POLL_TIME = 5000L;
 	private static final int DEFAULT_COPIES = 1;
 	private static final String DEFAULT_PROCESSED_DIRECTORY = "processed";
@@ -104,6 +103,7 @@ public class PrintClient {
 				timer.schedule(new DirectoryPollThread(this), 0L, getPollTime());
 			}
 			started=true;
+			LOG.info("Print client started");
 		}
 	}
 
@@ -220,9 +220,19 @@ public class PrintClient {
 			System.out.println(HELP);
 			return;
 		}
-		//Set logger
-		Logger.getGlobal().addHandler(new ConsoleHandler());
-		Logger.getGlobal().setLevel(Level.INFO);
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		//Set logger and console handler
+		//Must remove previous handlers first
+		final Logger rootLogger = Logger.getLogger("");
+		rootLogger.setUseParentHandlers(false);
+		for(Handler h : rootLogger.getHandlers()){
+			rootLogger.removeHandler(h);
+		}
+		final ConsoleHandler consoleHandler = new ConsoleHandler();
+		rootLogger.addHandler(consoleHandler);
+		consoleHandler.setFormatter(new ConsoleFormatter());
+		rootLogger.setLevel(Level.INFO);
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//Init PrintClient
 		final PrintClient pc = new PrintClient();
 		pc.setPrintServerUrl(printServerUrl);

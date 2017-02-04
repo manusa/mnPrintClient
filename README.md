@@ -8,13 +8,15 @@ Usage: mnprintclient -[dir|url] path|url [options]
 
 ## Options
 
-| -url | Url to poll with a valid JSON response |
-| -dir | Directory to poll where pdf files are placed to print |
-| -processed | Directory to move printed pdf files in dir mode |
-| -cookie | String with cookie to send to server in url mode |
-| -printerName | Default printer name (useful in directory mode) |
-| -copies | Default number of copies to print (useful in directory mode) |
-| --help | Prints this page |
+| Option       | Description                                                  |
+| ------------ | ------------------------------------------------------------ |
+| -url         | Url to poll with a valid JSON response                       |
+| -dir         | Directory to poll where pdf files are placed to print        |
+| -processed   | Directory to move printed pdf files in dir mode              |
+| -cookie      | String with cookie to send to server in url mode             |
+| -printerName | Default printer name (useful in directory mode)              |
+| -copies      | Default number of copies to print (useful in directory mode) |
+| --help       | Prints this page                                             |
 
 ## Examples
 

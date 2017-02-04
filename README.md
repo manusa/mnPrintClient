@@ -21,4 +21,5 @@ Usage: mnprintclient -[dir|url] path|url [options]
 ## Examples
 
 `mnprintclient -dir c:\users\user\documents\toprint -printerName MyLaserPrinter`
+
 `mnprintclient -url http://www.server.com/printList.json -cookie JSESSIONID=12a3bc4defgjk5lmn6opqr7stu`

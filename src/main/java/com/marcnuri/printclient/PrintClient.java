@@ -51,14 +51,19 @@ public class PrintClient {
 		"\n2017 www.marcnuri.com\n\n" +
 		"Silently print PDF files from your server by reading a JSON parameter list, or from your local computer by\n" +
 		"placing PDF files in the specified directory.\n\n" +
-		"Usage: mnprintclient -[dir|url] url [options]\n" +
+		"Usage: mnprintclient -[dir|url] path|url [options]\n" +
 		"Options:\n" +
 		"    -url: Url to poll with a valid JSON response\n" +
 		"    -dir: Directory to poll where pdf files are placed to print\n" +
 		"    -processed: Directory to move printed pdf files in dir mode\n" +
 		"    -cookie: String with cookie to send to server in url mode\n" +
-		"    --help: Prints this page"
-			;
+		"    -printerName: Default printer name (useful in directory mode)\n" +
+		"    -copies: Default number of copies to print (useful in directory mode)\n" +
+		"    --help: Prints this page\n\n" +
+		"Examples:\n" +
+		"    mnprintclient -dir c:\\users\\user\\documents\\toprint -printerName MyLaserPrinter\n" +
+		"    mnprintclient -url http://www.server.com/printList.json -cookie JSESSIONID=12a3bc4defgjk5lmn6opqr7stu"
+		;
 	private final Timer timer;
 	private boolean started;
 	private String printServerUrl;
